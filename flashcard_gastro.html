@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>消化器内科 学習フラッシュカード</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#f5f5f0;--card-bg:#fff;--text:#1a1a18;--sub:#5f5e5a;--hint:#888;
+  --border:#d3d1c7;--purple:#534AB7;--purple-l:#EEEDFE;--purple-m:#AFA9EC;
+  --green:#1D9E75;--green-l:#EAF3DE;--red:#E24B4A;--red-l:#FCEBEB;
+  --amber:#BA7517;--amber-l:#FAEEDA;--teal:#0F6E56;--teal-l:#E1F5EE;
+  --coral:#993C1D;--coral-l:#FAECE7;--blue:#185FA5;--blue-l:#E6F1FB;
+  --pink:#993556;--pink-l:#FBEAF0;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+.header{padding:10px 14px 6px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.header-title{font-size:15px;font-weight:500;}
+.header-right{display:flex;gap:10px;align-items:center;}
+.stat-pill{font-size:12px;display:flex;gap:6px;}
+.stat{display:flex;align-items:center;gap:3px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.icon-btn{font-size:13px;color:var(--purple);cursor:pointer;padding:3px 0;background:none;border:none;}
+
+.genre-section{flex-shrink:0;border-bottom:0.5px solid var(--border);background:#fff;}
+.genre-axis-row{display:flex;gap:0;border-bottom:0.5px solid var(--border);}
+.axis-tab{flex:1;font-size:11px;font-weight:500;text-align:center;padding:7px 4px;color:var(--hint);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.axis-tab.active{color:var(--purple);border-bottom-color:var(--purple);}
+.genre-chips{display:flex;gap:5px;overflow-x:auto;padding:7px 12px;scrollbar-width:none;}
+.genre-chips::-webkit-scrollbar{display:none;}
+.chip{font-size:11px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s;}
+.chip.active{background:var(--purple-l);color:var(--purple);border-color:var(--purple-m);}
+
+.progress-wrap{padding:5px 14px 4px;flex-shrink:0;}
+.progress-bg{height:3px;background:#e0dfd8;border-radius:2px;overflow:hidden;}
+.progress-fill{height:3px;border-radius:2px;background:var(--purple);transition:width 0.3s;}
+.progress-label{font-size:10px;color:var(--hint);margin-top:3px;text-align:right;}
+
+.card-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px 4px;position:relative;overflow:hidden;}
+.card-stack{position:relative;width:100%;max-width:420px;height:250px;}
+.bg-card{position:absolute;width:100%;height:250px;background:#fff;border:0.5px solid var(--border);border-radius:16px;top:5px;left:3px;opacity:0.5;}
+.bg-card2{position:absolute;width:100%;height:250px;background:#fff;border:0.5px solid var(--border);border-radius:16px;top:2px;left:1px;opacity:0.7;}
+.card{position:absolute;width:100%;height:250px;background:var(--card-bg);border:0.5px solid var(--border);border-radius:16px;padding:14px 16px 12px;cursor:pointer;user-select:none;display:flex;flex-direction:column;justify-content:space-between;touch-action:pan-y;}
+.card.dragging{transition:none;}
+.card.fly-right{transition:transform 0.32s ease,opacity 0.32s;transform:translateX(130%) rotate(12deg)!important;opacity:0;}
+.card.fly-left{transition:transform 0.32s ease,opacity 0.32s;transform:translateX(-130%) rotate(-12deg)!important;opacity:0;}
+.card.fly-up{transition:transform 0.3s ease,opacity 0.3s;transform:translateY(-130%) scale(0.9)!important;opacity:0;}
+
+.card-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;}
+.card-num{font-size:11px;color:var(--hint);white-space:nowrap;}
+.card-q{font-size:15px;font-weight:500;line-height:1.55;flex:1;display:flex;align-items:center;text-align:center;justify-content:center;padding:6px 0;}
+.card-hint{font-size:11px;color:var(--hint);text-align:center;}
+
+.answer-overlay{position:absolute;inset:0;border-radius:16px;background:rgba(255,255,255,0.97);padding:14px 16px 12px;display:none;flex-direction:column;justify-content:space-between;overflow-y:auto;}
+.answer-overlay.show{display:flex;}
+.answer-label{font-size:10px;font-weight:500;color:var(--purple);letter-spacing:0.06em;text-transform:uppercase;}
+.answer-text{font-size:13px;line-height:1.65;color:var(--text);flex:1;padding:6px 0;}
+.answer-key{font-size:11px;color:var(--sub);border-top:0.5px solid var(--border);padding-top:7px;line-height:1.5;}
+
+.swipe-ind{position:absolute;top:50%;transform:translateY(-50%);font-size:12px;font-weight:500;padding:5px 10px;border-radius:6px;opacity:0;transition:opacity 0.1s;pointer-events:none;z-index:10;}
+.ind-r{right:10px;background:var(--green-l);color:var(--green);border:1.5px solid var(--green);}
+.ind-l{left:10px;background:var(--red-l);color:var(--red);border:1.5px solid var(--red);}
+.ind-u{left:50%;transform:translate(-50%,-50%);background:#FCEBEB;color:#A32D2D;border:1.5px solid #F09595;white-space:nowrap;}
+
+.btn-row{display:flex;justify-content:center;gap:10px;padding:6px 14px 12px;flex-shrink:0;}
+.btn{height:52px;border-radius:26px;border:0.5px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:transform 0.1s;padding:0 18px;}
+.btn:active{transform:scale(0.91);}
+.btn-w{background:var(--red-l);border-color:var(--red);flex:1;}
+.btn-f{background:var(--purple-l);border-color:var(--purple-m);flex:1;}
+.btn-r{background:var(--green-l);border-color:var(--green);flex:1;}
+.btn-del{background:#fff;border-color:var(--border);color:var(--hint);font-size:14px;padding:0 14px;}
+
+.result-screen{display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;text-align:center;flex:1;}
+.result-screen.show{display:flex;}
+.result-title{font-size:20px;font-weight:500;margin-bottom:6px;}
+.result-sub{font-size:13px;color:var(--sub);margin-bottom:20px;line-height:1.6;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:300px;margin-bottom:20px;}
+.res-m{border-radius:10px;padding:12px 8px;text-align:center;}
+.res-label{font-size:10px;color:var(--hint);margin-bottom:3px;}
+.res-val{font-size:24px;font-weight:500;}
+.res-btn{padding:11px 24px;border-radius:99px;border:0.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;margin:3px;background:#fff;color:var(--sub);}
+.res-btn.primary{background:var(--purple);color:#fff;border-color:var(--purple);}
+
+.empty{text-align:center;padding:40px 20px;color:var(--hint);}
+.empty p{font-size:14px;line-height:1.7;}
+
+/* Modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:flex-end;justify-content:center;z-index:100;}
+.modal-ov.show{display:flex;}
+.modal{background:#fff;border-radius:18px 18px 0 0;padding:18px 18px 34px;width:100%;max-width:480px;max-height:78vh;overflow-y:auto;}
+.modal-title{font-size:14px;font-weight:500;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--hint);margin-bottom:14px;}
+.modal-item{padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--border-radius-md,8px);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.modal-item-text{font-size:12px;color:var(--sub);flex:1;line-height:1.4;}
+.modal-item-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;flex-shrink:0;}
+.modal-del-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:0.5px solid var(--red);background:var(--red-l);color:var(--red);cursor:pointer;flex-shrink:0;}
+.modal-del-btn:hover{background:#f7c1c1;}
+.modal-restore-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:0.5px solid var(--green);background:var(--green-l);color:var(--green);cursor:pointer;flex-shrink:0;}
+.modal-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.modal-tab{flex:1;padding:6px;border-radius:6px;border:0.5px solid var(--border);background:transparent;font-size:12px;color:var(--sub);cursor:pointer;text-align:center;}
+.modal-tab.active{background:var(--purple-l);color:var(--purple);border-color:var(--purple-m);}
+.modal-close{display:block;text-align:center;margin-top:12px;font-size:14px;color:var(--purple);cursor:pointer;}
+.confirm-bar{background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#A32D2D;display:none;}
+.confirm-bar.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">消化器内科 学習カード</div>
+  <div class="header-right">
+    <div class="stat-pill">
+      <span class="stat"><span class="dot" style="background:var(--green)"></span><span id="ok-count">0</span></span>
+      <span class="stat"><span class="dot" style="background:var(--red)"></span><span id="ng-count">0</span></span>
+    </div>
+    <button class="icon-btn" onclick="showModal('manage')">管理</button>
+  </div>
+</div>
+
+<div class="genre-section">
+  <div class="genre-axis-row">
+    <div class="axis-tab active" onclick="setAxis('organ')">臓器別</div>
+    <div class="axis-tab" onclick="setAxis('disease')">疾患別</div>
+    <div class="axis-tab" onclick="setAxis('situation')">状況別</div>
+    <div class="axis-tab" onclick="setAxis('all')">すべて</div>
+  </div>
+  <div class="genre-chips" id="genre-chips"></div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bg"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="progress-label" id="prog-label">0 / 0</div>
+</div>
+
+<div class="card-area" id="card-area">
+  <div class="card-stack" id="card-stack">
+    <div class="bg-card2"></div>
+    <div class="bg-card"></div>
+    <div class="card" id="main-card"
+      ontouchstart="ts(event)" ontouchmove="tm(event)" ontouchend="te(event)"
+      onmousedown="md(event)" onclick="flipCard()">
+      <div class="card-meta">
+        <div class="tags" id="card-tags"></div>
+        <span class="card-num" id="card-num"></span>
+      </div>
+      <div class="card-q" id="card-q">読込中...</div>
+      <div class="card-hint" id="card-hint">タップで答えを表示</div>
+      <div class="answer-overlay" id="ans-ov">
+        <div class="answer-label">答え</div>
+        <div class="answer-text" id="ans-text"></div>
+        <div class="answer-key" id="ans-key"></div>
+      </div>
+      <div class="swipe-ind ind-r" id="ind-r">✓ 正解</div>
+      <div class="swipe-ind ind-l" id="ind-l">✗ 不正解</div>
+      <div class="swipe-ind ind-u" id="ind-u">⬆ 削除</div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <div class="btn btn-w" onclick="judge(false)">✗</div>
+  <div class="btn btn-f" onclick="flipCard()">↩</div>
+  <div class="btn btn-r" onclick="judge(true)">✓</div>
+  <div class="btn btn-del" onclick="deleteCurrentCard()" title="このカードを削除">🗑</div>
+</div>
+
+<div class="result-screen" id="result-screen">
+  <div class="result-title">セッション完了！</div>
+  <div class="result-sub" id="res-sub"></div>
+  <div class="res-grid">
+    <div class="res-m" style="background:var(--green-l)"><div class="res-label">正解</div><div class="res-val" style="color:var(--green)" id="res-ok">0</div></div>
+    <div class="res-m" style="background:var(--red-l)"><div class="res-label">不正解</div><div class="res-val" style="color:var(--red)" id="res-ng">0</div></div>
+    <div class="res-m" style="background:var(--purple-l);grid-column:span 2"><div class="res-label">正答率</div><div class="res-val" style="color:var(--purple)" id="res-rate">0%</div></div>
+  </div>
+  <button class="res-btn primary" onclick="restart(true)">不正解のみ再挑戦</button>
+  <button class="res-btn" onclick="restart(false)">全問やり直す</button>
+  <button class="res-btn" onclick="showModal('manage')">カード管理</button>
+</div>
+
+<div class="modal-ov" id="modal-ov" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-tabs" id="modal-tabs">
+      <button class="modal-tab active" onclick="switchModalTab('all')">全カード</button>
+      <button class="modal-tab" onclick="switchModalTab('deleted')">削除済み</button>
+      <button class="modal-tab" onclick="switchModalTab('scores')">正答率</button>
+    </div>
+    <div class="confirm-bar" id="confirm-bar"></div>
+    <div id="modal-body"></div>
+    <span class="modal-close" onclick="closeModal()">閉じる</span>
+  </div>
+</div>
+
+<script>
+const SCORE_KEY = 'gastro_scores_v3';
+const DEL_KEY   = 'gastro_deleted_v3';
+const EXTRA_KEY = 'gastro_extra_v3';
+
+/* ===== 全カードデータ ===== */
+const BUILTIN_CARDS = [
+  /* ---- 消化器 / GERD ---- */
+  {id:'g01',organ:'上部消化管',disease:'GERD',situation:'外来・病棟',
+   q:'GERDのLA分類Grade A〜Dをそれぞれ定義せよ。',
+   a:'A: 粘膜傷害<5mm・ひだ頂部限局\nB: ≥5mm・ひだ頂部限局\nC: ≥2本のひだにまたがるが周在性でない\nD: 全周性（周在性）。Grade C/Dは長期PPI管理とBarrett評価が必要。',
+   key:'A<5mm / B≥5mm / C複数ひだ / D全周性'},
+  {id:'g02',organ:'上部消化管',disease:'GERD',situation:'外来・病棟',
+   q:'NERDに対するPPI試験治療の陽性基準（期間・改善率）は？感度・特異度も。',
+   a:'2〜4週のPPI標準量投与で症状が50%以上改善すれば陽性。感度77%・特異度86%。',
+   key:'2〜4週 / 50%改善 / 感度77% 特異度86%'},
+  {id:'g03',organ:'上部消化管',disease:'GERD',situation:'外来・病棟',
+   q:'クロピドグレル服用中の患者にPPIが必要になった。避けるべき薬剤と代替薬は？',
+   a:'オメプラゾール・エソメプラゾールはCYP2C19阻害によりクロピドグレルの活性代謝物を減少させる。代替：ラベプラゾール（CYP2C19影響小）またはボノプラザン（P-CAB）。',
+   key:'避ける：オメプラゾール・エソメプラゾール / 代替：ラベプラゾール・ボノプラザン'},
+  {id:'g04',organ:'上部消化管',disease:'GERD',situation:'外来・病棟',
+   q:'難治性GERDの定義と、まず確認すべき3つの修正可能因子を述べよ。',
+   a:'定義：標準量PPI/P-CABを8週投与しても症状残存。修正因子：①服薬アドヒアランス（PPIは食前30分）、②生活習慣（体重・就寝前食事・アルコール・喫煙）、③原因薬（NSAIDs・Ca拮抗薬・テオフィリン）。',
+   key:'8週 / 服薬確認・生活習慣・原因薬'},
+  {id:'g05',organ:'上部消化管',disease:'GERD',situation:'外来・病棟',
+   q:'機能性胸焼けとGERDを鑑別するための検査と判断基準を述べよ。',
+   a:'pH-インピーダンス検査。Symptom Index（SI）<50%かつ酸曝露時間が正常→機能性胸焼け（Rome IV）。機能性にはPPI継続は無効で、低用量抗うつ薬・CBTを検討。',
+   key:'pH-インピーダンス / SI<50%+酸曝露正常→機能性 / 低用量抗うつ薬'},
+  /* ---- 肝臓 / 急性肝不全 ---- */
+  {id:'a01',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'急性肝不全の診断基準（PT活性値とINR）を述べよ。劇症肝炎とLOHFの違いは？',
+   a:'既知の慢性肝疾患なしで急性肝障害が生じ、PT活性≤40%（INR≥1.5）。肝性脳症あり→劇症肝炎、なし→遅発性肝不全（LOHF）。',
+   key:'PT≤40% / INR≥1.5 / 脳症あり→劇症肝炎'},
+  {id:'a02',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'急性肝不全で見逃してはならない特殊原因を4つ挙げよ。それぞれの手がかりは？',
+   a:'①Wilson病（若年＋溶血性貧血＋KF環）②妊娠急性脂肪肝/HELLP（妊娠後期）③HSV肝炎（免疫抑制患者）④Budd-Chiari症候群（腹痛＋腹水＋肝腫大）。',
+   key:'Wilson（溶血）/ AFLP（妊娠）/ HSV（免疫抑制）/ Budd-Chiari（腹痛腹水）'},
+  {id:'a03',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'急性肝不全来院時、最優先で確認・補正すべき検査値と対応は？',
+   a:'血糖。肝の糖新生低下により低血糖が起こりやすく、脳症を悪化させる。血糖<60mg/dLなら50%ブドウ糖を静注し、10%ブドウ糖液で持続点滴を開始。',
+   key:'低血糖→脳症悪化 / 50%G iv / 10%G持続'},
+  {id:'a04',organ:'肝臓',disease:'急性肝不全',situation:'病棟急変',
+   q:'急性肝不全でFFPを使いすぎてはいけない理由は？PT/INRのモニタリング頻度は？',
+   a:'FFPはPTを補正し重症度判断ができなくなる（マスク効果）。出血コントロール以外の目的では最小限に。PT/INRは2〜4時間ごとにモニタリング。',
+   key:'FFP→PTマスク / 2〜4時間ごとモニタリング'},
+  {id:'a05',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'非アセトアミノフェン性急性肝不全のKing\'s College Criteriaを述べよ。',
+   a:'①PT>100秒単独、または②以下5項目中3項目以上：年齢<10歳 or >40歳 / 黄疸→脳症>7日 / PT>50秒 / T-Bil>17.5mg/dL / 薬物性 or 非A非B型。',
+   key:'PT>100秒単独 or 5項目中3項目 / 非アセトアミノフェン性'},
+  {id:'a06',organ:'肝臓',disease:'急性肝不全',situation:'病棟急変',
+   q:'急性肝不全で脳浮腫が疑われた場合の対応。閾値となるNH3値も述べよ。',
+   a:'NH3>150µmol/Lで脳ヘルニアリスクが上昇。マンニトール0.5〜1.0g/kg iv、頭位30度挙上、発熱・低Na・高CO2を回避。ICUでICPモニタリングも検討。',
+   key:'NH3>150µmol/L / マンニトール0.5〜1.0g/kg / 頭位30度'},
+  {id:'a07',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'急性肝不全でHBVが原因と疑われた場合の特異的治療と禁忌は？',
+   a:'エンテカビル0.5mg/日を遅延なく開始。ステロイドはHBV増殖を促進するため禁忌。',
+   key:'エンテカビル即日開始 / ステロイド禁忌'},
+  {id:'a08',organ:'肝臓',disease:'急性肝不全',situation:'救急初療',
+   q:'転送を「今すぐ」決断すべき急性肝不全の条件は？',
+   a:'脳症Grade II以上、またはPT活性≤40%かつ悪化傾向。「もう少し様子を見る」は急性型では許されないことが多い。',
+   key:'脳症GradeII以上 or PT≤40%かつ悪化→即転送'},
+  /* ---- 全身 / ショック・循環 ---- */
+  {id:'n01',organ:'全身',disease:'ショック・循環',situation:'救急初療',
+   q:'ノルアドレナリンの主な作用受容体と血行動態への効果を述べよ。',
+   a:'α1受容体主体（β1作用は軽度）。末梢血管抵抗を上昇させMAPを維持。心拍数はほぼ変化しない。敗血症性ショックの第一選択昇圧薬。',
+   key:'α1主体 / 末梢抵抗↑ / 心拍変化なし / 敗血症ショック第一選択'},
+  {id:'n02',organ:'全身',disease:'ショック・循環',situation:'救急初療',
+   q:'敗血症性ショックのMAP目標値は？慢性高血圧・急性肝不全ではどう変わるか？',
+   a:'SSCガイドライン：MAP≥65mmHg。慢性高血圧・急性肝不全（肝腎症候群予防）では70〜80mmHgを目標とすることがある。',
+   key:'標準≥65mmHg / 高血圧・肝不全→70〜80mmHg'},
+  {id:'n03',organ:'全身',disease:'ショック・循環',situation:'救急初療',
+   q:'ノルアドレナリン5mg+生食45mL（0.1mg/mL）で体重60kgの患者に0.1γを投与する場合の流量（mL/時）を求めよ。',
+   a:'流量 = 0.1 × 60 × 60 ÷ 100 = 3.6 mL/時。\n計算式：γ × 体重 × 60 ÷ 濃度(µg/mL)。この組成ではγ × 体重 × 0.6 = mL/時と覚えると速い。',
+   key:'3.6mL/時 / 式：γ×体重×60÷濃度 / この組成：γ×体重×0.6'},
+  {id:'n04',organ:'全身',disease:'ショック・循環',situation:'病棟急変',
+   q:'ノルアドレナリン0.25γ超でもMAP改善しない場合の追加薬剤2つと用量を述べよ。',
+   a:'①バソプレシン0.03U/min（固定用量、漸増しない）を追加。②ヒドロコルチゾン200mg/日持続静注（相対的副腎不全の補充）。0.3〜0.5γ超では末梢虚血・腸管虚血リスクが高まる。',
+   key:'バソプレシン0.03U/min固定 / ヒドロコルチゾン200mg/日 / >0.3γで虚血リスク'},
+  {id:'n05',organ:'全身',disease:'ショック・循環',situation:'病棟急変',
+   q:'ノルアドレナリン離脱の原則を述べよ。なぜ急な中断は危険か？',
+   a:'MAP安定後に0.01〜0.02γずつ緩徐に減量。急な中断はリバウンド低血圧を引き起こす。最小流量でも数時間維持してから中止するのが安全。',
+   key:'0.01〜0.02γずつ緩徐 / リバウンド低血圧に注意'},
+  /* ---- 感染症 / 治療期間 ---- */
+  {id:'id01',organ:'全身',disease:'感染症',situation:'病棟急変',
+   q:'GNR菌血症（非複雑性：尿路・胆道・腹腔内ソースコントロール済み）の治療期間は？',
+   a:'7日間。NEJM 2019（OPTIC試験）で14日との差なし。ソースコントロールが前提。',
+   key:'7日間 / OPTIC試験 / ソースコントロール前提'},
+  {id:'id02',organ:'全身',disease:'感染症',situation:'病棟急変',
+   q:'CRBSI（カテーテル関連血流感染）の治療期間と前提条件は？',
+   a:'カテーテル抜去を前提に14日間。黄色ブドウ球菌や合併症（心内膜炎・骨髄炎）があれば延長。',
+   key:'14日間 / カテーテル抜去が前提 / SABは合併症評価'},
+  {id:'id03',organ:'全身',disease:'感染症',situation:'病棟急変',
+   q:'黄色ブドウ球菌菌血症（単純性）の最低治療期間は？複雑性との違いは？',
+   a:'単純性：最低14日間。複雑性（心内膜炎・骨髄炎など）は4〜6週。経食道心エコーによる評価が必要。',
+   key:'単純性14日 / 複雑性4〜6週 / TEEで評価'},
+  {id:'id04',organ:'尿路',disease:'感染症',situation:'外来・病棟',
+   q:'女性の単純性膀胱炎の治療期間と選択薬を述べよ。',
+   a:'3〜5日間。ST合剤3日、フルオロキノロン3日、フォスフォマイシン単回投与も選択肢。',
+   key:'3〜5日 / ST合剤3日 / フォスフォマイシン単回'},
+  {id:'id05',organ:'尿路',disease:'感染症',situation:'外来・病棟',
+   q:'急性単純性腎盂腎炎の治療期間は？重症例と菌血症合併例では？',
+   a:'外来治療可能な軽症はフルオロキノロン7日。菌血症合併・重症は14日。',
+   key:'軽症7日 / 重症・菌血症14日'},
+  {id:'id06',organ:'呼吸器',disease:'感染症',situation:'外来・病棟',
+   q:'市中肺炎（CAP）の治療期間の考え方を述べよ。',
+   a:'臨床的安定（解熱・バイタル正常化）確認後5日間。重症・膿胸合併は延長。',
+   key:'安定確認後5日 / 重症は延長'},
+  {id:'id07',organ:'呼吸器',disease:'感染症',situation:'病棟急変',
+   q:'院内肺炎（HAP/VAP）の治療期間は？以前との違いは？',
+   a:'7日間。以前の14日から短縮されたエビデンスに基づく。プロカルシトニンガイド下でさらに短縮可能な場合もある。',
+   key:'7日間 / 14日から短縮 / PCT ガイド下'},
+  {id:'id08',organ:'消化管',disease:'感染症',situation:'病棟急変',
+   q:'腹腔内感染症（腸穿孔・虫垂炎など）ソースコントロール後の抗菌薬投与期間は？',
+   a:'4日以内。SIS/IDSAガイドラインでソースコントロール後は4日以内を推奨。長期投与は耐性菌リスク増加。',
+   key:'4日以内 / SIS/IDSA / 長期投与は耐性菌リスク'},
+  {id:'id09',organ:'消化管',disease:'感染症',situation:'病棟急変',
+   q:'C. difficile感染症（CDI）の標準治療期間と重症例の対応は？',
+   a:'軽〜中等症：メトロニダゾール/バンコマイシン経口10日間。重症・再発はフィダキソマイシンまたはベジュロトクスマブ追加。',
+   key:'10日間 / 重症：フィダキソマイシン / ベジュロトクスマブ'},
+  {id:'id10',organ:'全身',disease:'感染症',situation:'病棟急変',
+   q:'化膿性関節炎の治療期間と必須処置を述べよ。',
+   a:'2〜4週間。関節洗浄・ドレナージが必須。淋菌性は1〜2週間と短い。',
+   key:'2〜4週 / 洗浄・ドレナージ必須 / 淋菌性は1〜2週'},
+  {id:'id11',organ:'全身',disease:'感染症',situation:'病棟急変',
+   q:'血行性骨髄炎（成人）の治療期間とステップダウンの考え方を述べよ。',
+   a:'6週間。静注2週→経口4週のステップダウンが一般的。バイオマーカー（CRP・ESR）で効果評価しながら。',
+   key:'6週間 / 静注2週→経口4週ステップダウン'},
+  {id:'id12',organ:'中枢神経',disease:'感染症',situation:'救急初療',
+   q:'細菌性髄膜炎の治療期間は菌種によってどう異なるか？補助療法は？',
+   a:'肺炎球菌：10〜14日、髄膜炎菌：7日、リステリア：21日。デキサメタゾン補助療法（早期投与）を忘れずに。',
+   key:'肺炎球菌10〜14日 / 髄膜炎菌7日 / リステリア21日 / デキサメタゾン'},
+  {id:'id13',organ:'中枢神経',disease:'感染症',situation:'救急初療',
+   q:'感染性心内膜炎（連鎖球菌感受性あり）の治療期間は？人工弁では？',
+   a:'自己弁4週間、人工弁6週間。黄色ブドウ球菌・腸球菌・人工弁置換例（PVE）は原則6週間。TDMと心エコーフォローが必須。',
+   key:'自己弁4週 / 人工弁6週 / SAB・PVEは6週'},
+  {id:'id14',organ:'全身',disease:'感染症',situation:'外来・病棟',
+   q:'肺結核（感受性TB）の標準治療レジメンと期間を述べよ。',
+   a:'6ヶ月：初期2ヶ月HRZE、継続4ヶ月HR。空洞あり・喀痰陰性化遅延例は9ヶ月に延長を検討。',
+   key:'6ヶ月 / 2HRZE+4HR / 空洞あり→9ヶ月検討'},
+];
+
+/* ===== 軸定義 ===== */
+const AXES = {
+  organ:    {key:'organ',    colors:{上部消化管:{bg:'#E1F5EE',c:'#085041'},肝臓:{bg:'#FAECE7',c:'#712B13'},全身:{bg:'#EEEDFE',c:'#3C3489'},下部消化管:{bg:'#EAF3DE',c:'#27500A'},膵臓:{bg:'#FAEEDA',c:'#633806'},尿路:{bg:'#E6F1FB',c:'#0C447C'},呼吸器:{bg:'#FBEAF0',c:'#72243E'},消化管:{bg:'#EAF3DE',c:'#27500A'},中枢神経:{bg:'#FCEBEB',c:'#A32D2D'}}},
+  disease:  {key:'disease',  colors:{GERD:{bg:'#E1F5EE',c:'#085041'},急性肝不全:{bg:'#FCEBEB',c:'#A32D2D'},'ショック・循環':{bg:'#EEEDFE',c:'#3C3489'},感染症:{bg:'#FAEEDA',c:'#633806'}}},
+  situation:{key:'situation',colors:{救急初療:{bg:'#FCEBEB',c:'#A32D2D'},病棟急変:{bg:'#FAEEDA',c:'#633806'},'外来・病棟':{bg:'#EAF3DE',c:'#27500A'}}},
+  all:      {key:null,colors:{}},
+};
+
+let allCards = [...BUILTIN_CARDS];
+let deck = [], current = 0, sessionOk = 0, sessionNg = 0;
+let scores = {}, deletedIds = new Set();
+let flipped = false;
+let activeAxis = 'organ', activeGenre = 'all';
+let startX = 0, startY = 0, isDragging = false, dragX = 0, dragY = 0, mouseDown_ = false;
+let modalTab = 'all';
+
+/* ===== Storage ===== */
+async function loadData(){
+  try { const r = await window.storage.get(SCORE_KEY); if(r&&r.value) scores=JSON.parse(r.value); } catch(e){ scores={}; }
+  try { const r = await window.storage.get(DEL_KEY); if(r&&r.value) deletedIds=new Set(JSON.parse(r.value)); } catch(e){ deletedIds=new Set(); }
+  try { const r = await window.storage.get(EXTRA_KEY); if(r&&r.value){ const ex=JSON.parse(r.value); const eids=new Set(BUILTIN_CARDS.map(c=>c.id)); ex.forEach(c=>{ if(!eids.has(c.id)) allCards.push(c); }); } } catch(e){}
+}
+async function saveScores(){ try{ await window.storage.set(SCORE_KEY, JSON.stringify(scores)); }catch(e){} }
+async function saveDeleted(){ try{ await window.storage.set(DEL_KEY, JSON.stringify([...deletedIds])); }catch(e){} }
+
+/* ===== Active cards (not deleted) ===== */
+function activeCards(){ return allCards.filter(c => !deletedIds.has(c.id)); }
+
+/* ===== Genre UI ===== */
+function setAxis(axis){
+  activeAxis=axis; activeGenre='all';
+  document.querySelectorAll('.axis-tab').forEach((t,i)=>{ const ks=['organ','disease','situation','all']; t.classList.toggle('active',ks[i]===axis); });
+  renderChips(); buildDeck(); renderCard(); hideResult();
+}
+function renderChips(){
+  const wrap=document.getElementById('genre-chips');
+  if(activeAxis==='all'){ wrap.innerHTML=''; return; }
+  const ak=AXES[activeAxis].key;
+  const vals=['all',...new Set(activeCards().map(c=>c[ak]).filter(Boolean))];
+  wrap.innerHTML=vals.map(v=>`<div class="chip${v===activeGenre?' active':''}" onclick="setGenre('${v}')">${v==='all'?'すべて':v}</div>`).join('');
+}
+function setGenre(genre){
+  activeGenre=genre;
+  document.querySelectorAll('.chip').forEach(c=>{ c.classList.toggle('active', c.textContent===(genre==='all'?'すべて':genre)); });
+  buildDeck(); renderCard(); hideResult();
+}
+
+/* ===== Deck ===== */
+function getWeight(id){ const s=scores[id]; if(!s||(s.ok+s.ng)===0) return 3; const r=s.ok/(s.ok+s.ng); return r>=0.8?1:r>=0.5?2:4; }
+function buildDeck(onlyWrong=false){
+  let pool=activeCards();
+  if(activeAxis!=='all'&&activeGenre!=='all'){ const ak=AXES[activeAxis].key; pool=pool.filter(c=>c[ak]===activeGenre); }
+  if(onlyWrong) pool=pool.filter(c=>scores[c.id]&&scores[c.id].ng>0);
+  let weighted=[]; pool.forEach(c=>{ const w=getWeight(c.id); for(let i=0;i<w;i++) weighted.push(c); });
+  weighted.sort(()=>Math.random()-0.5);
+  deck=weighted.slice(0,Math.min(weighted.length,20));
+  current=0; sessionOk=0; sessionNg=0; flipped=false;
+}
+
+/* ===== Render ===== */
+function getTagHTML(card){
+  const defs=[{key:'organ',colors:AXES.organ.colors},{key:'disease',colors:AXES.disease.colors},{key:'situation',colors:AXES.situation.colors}];
+  return defs.map(({key,colors})=>{ const val=card[key]; if(!val) return ''; const col=colors[val]||{bg:'#f0efea',c:'#5f5e5a'}; return `<span class="tag" style="background:${col.bg};color:${col.c}">${val}</span>`; }).join('');
+}
+function renderCard(){
+  if(deck.length===0){ showEmpty(); return; }
+  if(current>=deck.length){ showResult(); return; }
+  const c=deck[current];
+  document.getElementById('card-tags').innerHTML=getTagHTML(c);
+  document.getElementById('card-num').textContent=(current+1)+' / '+deck.length;
+  document.getElementById('card-q').textContent=c.q;
+  document.getElementById('ans-text').textContent=c.a;
+  document.getElementById('ans-key').textContent='★ '+c.key;
+  document.getElementById('ans-ov').classList.remove('show');
+  document.getElementById('card-hint').textContent='タップで答えを表示';
+  flipped=false;
+  const card=document.getElementById('main-card');
+  card.style.transform=''; card.classList.remove('fly-right','fly-left','fly-up','dragging');
+  document.getElementById('ind-r').style.opacity='0';
+  document.getElementById('ind-l').style.opacity='0';
+  document.getElementById('ind-u').style.opacity='0';
+  document.getElementById('ok-count').textContent=sessionOk;
+  document.getElementById('ng-count').textContent=sessionNg;
+  const pct=Math.round((current/deck.length)*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-label').textContent=current+' / '+deck.length+' 完了';
+  document.getElementById('card-area').style.display='flex';
+  document.querySelector('.btn-row').style.display='flex';
+}
+function showEmpty(){
+  document.getElementById('card-area').innerHTML='<div class="empty"><p>このジャンルにはまだ問題がありません。</p></div>';
+}
+function flipCard(){
+  flipped=!flipped;
+  document.getElementById('ans-ov').classList.toggle('show',flipped);
+  document.getElementById('card-hint').textContent=flipped?'← 不正解　正解 →':'タップで答えを表示';
+}
+function judge(correct){
+  if(deck.length===0) return;
+  const c=deck[current];
+  if(!scores[c.id]) scores[c.id]={ok:0,ng:0};
+  if(correct){scores[c.id].ok++;sessionOk++;}else{scores[c.id].ng++;sessionNg++;}
+  saveScores();
+  document.getElementById('main-card').classList.add(correct?'fly-right':'fly-left');
+  setTimeout(()=>{ current++; renderCard(); },340);
+}
+
+/* ===== Delete ===== */
+function deleteCurrentCard(){
+  if(deck.length===0) return;
+  const c=deck[current];
+  deletedIds.add(c.id);
+  saveDeleted();
+  deck.splice(current,1);
+  const card=document.getElementById('main-card');
+  card.classList.add('fly-up');
+  setTimeout(()=>{ if(current>=deck.length) current=Math.max(0,deck.length-1); renderCard(); renderChips(); },320);
+}
+
+/* ===== Result ===== */
+function showResult(){
+  document.getElementById('card-area').style.display='none';
+  document.querySelector('.btn-row').style.display='none';
+  const rs=document.getElementById('result-screen'); rs.classList.add('show');
+  const total=sessionOk+sessionNg;
+  const rate=total>0?Math.round(sessionOk/total*100):0;
+  document.getElementById('res-ok').textContent=sessionOk;
+  document.getElementById('res-ng').textContent=sessionNg;
+  document.getElementById('res-rate').textContent=rate+'%';
+  document.getElementById('res-sub').textContent=rate>=80?'素晴らしい！':rate>=60?'あと少し。不正解を重点的に。':'苦手分野を復習しよう。';
+}
+function hideResult(){
+  document.getElementById('result-screen').classList.remove('show');
+  document.getElementById('card-area').style.display='flex';
+  document.querySelector('.btn-row').style.display='flex';
+}
+function restart(onlyWrong){
+  hideResult(); buildDeck(onlyWrong);
+  if(onlyWrong&&deck.length===0){alert('不正解の問題がありません！');buildDeck();}
+  renderCard();
+}
+
+/* ===== Modal ===== */
+function showModal(type){
+  document.getElementById('modal-title').textContent='カード管理';
+  document.getElementById('modal-sub').textContent='カードの確認・削除・復元ができます';
+  document.getElementById('modal-tabs').style.display='flex';
+  document.getElementById('modal-ov').classList.add('show');
+  renderModalBody(modalTab);
+}
+function switchModalTab(tab){
+  modalTab=tab;
+  document.querySelectorAll('.modal-tab').forEach((t,i)=>{ const ts=['all','deleted','scores']; t.classList.toggle('active',ts[i]===tab); });
+  renderModalBody(tab);
+}
+function renderModalBody(tab){
+  const body=document.getElementById('modal-body');
+  const cb=document.getElementById('confirm-bar');
+  cb.classList.remove('show'); cb.textContent='';
+  if(tab==='all'){
+    const cards=allCards.filter(c=>!deletedIds.has(c.id));
+    body.innerHTML=cards.length===0?'<p style="color:#888;font-size:13px;padding:8px 0">カードがありません</p>':cards.map(c=>{
+      const col=AXES.disease.colors[c.disease]||{bg:'#f0efea',c:'#5f5e5a'};
+      return `<div class="modal-item"><div class="modal-item-text">${c.q.slice(0,50)}…</div><span class="modal-item-tag" style="background:${col.bg};color:${col.c}">${c.disease||''}</span><button class="modal-del-btn" onclick="delFromModal('${c.id}')">削除</button></div>`;
+    }).join('');
+  } else if(tab==='deleted'){
+    const cards=allCards.filter(c=>deletedIds.has(c.id));
+    body.innerHTML=cards.length===0?'<p style="color:#888;font-size:13px;padding:8px 0">削除済みカードなし</p>':cards.map(c=>
+      `<div class="modal-item"><div class="modal-item-text" style="color:#aaa">${c.q.slice(0,50)}…</div><button class="modal-restore-btn" onclick="restoreCard('${c.id}')">復元</button></div>`
+    ).join('');
+  } else {
+    const cards=allCards.filter(c=>!deletedIds.has(c.id)&&scores[c.id]);
+    const sorted=[...cards].sort((a,b)=>{
+      const ra=scores[a.id]; const rb=scores[b.id];
+      const pa=ra?(ra.ok/(ra.ok+ra.ng)):0; const pb=rb?(rb.ok/(rb.ok+rb.ng)):0;
+      return pa-pb;
+    });
+    body.innerHTML=sorted.length===0?'<p style="color:#888;font-size:13px;padding:8px 0">まだ解答なし</p>':sorted.map(c=>{
+      const s=scores[c.id]||{ok:0,ng:0}; const t=s.ok+s.ng;
+      const r=t>0?Math.round(s.ok/t*100):0;
+      const col=r>=80?{bg:'#EAF3DE',c:'#27500A'}:r>=50?{bg:'#FAEEDA',c:'#633806'}:{bg:'#FCEBEB',c:'#A32D2D'};
+      return `<div class="modal-item"><div class="modal-item-text">${c.q.slice(0,45)}…</div><span class="modal-item-tag" style="background:${col.bg};color:${col.c}">${r}%（${s.ok}/${t}）</span></div>`;
+    }).join('');
+  }
+}
+function delFromModal(id){
+  const cb=document.getElementById('confirm-bar');
+  cb.innerHTML=`このカードを削除しますか？ <button onclick="confirmDel('${id}')" style="margin-left:8px;padding:3px 10px;border-radius:4px;border:0.5px solid #F09595;background:#FCEBEB;color:#A32D2D;cursor:pointer;font-size:11px;">削除する</button>`;
+  cb.classList.add('show');
+}
+function confirmDel(id){
+  deletedIds.add(id); saveDeleted();
+  deck=deck.filter(c=>c.id!==id);
+  if(current>=deck.length) current=Math.max(0,deck.length-1);
+  renderModalBody(modalTab); renderChips();
+  if(!document.getElementById('result-screen').classList.contains('show')) renderCard();
+}
+function restoreCard(id){
+  deletedIds.delete(id); saveDeleted();
+  renderModalBody(modalTab); renderChips();
+}
+function closeModal(){ document.getElementById('modal-ov').classList.remove('show'); }
+
+/* ===== Touch / Mouse ===== */
+function ts(e){ const t=e.touches[0]; startX=t.clientX; startY=t.clientY; isDragging=true; dragX=0; dragY=0; }
+function tm(e){
+  if(!isDragging) return;
+  dragX=e.touches[0].clientX-startX; dragY=e.touches[0].clientY-startY;
+  const absX=Math.abs(dragX), absY=Math.abs(dragY);
+  if(absY>absX&&absY>15){ e.preventDefault(); applyDrag(0, dragY); return; }
+  if(absX>absY&&absX>15){ e.preventDefault(); applyDrag(dragX, 0); }
+}
+function te(){ if(!isDragging) return; isDragging=false; finishDrag(); dragX=0; dragY=0; }
+function md(e){ mouseDown_=true; startX=e.clientX; startY=e.clientY; dragX=0; dragY=0; }
+document.addEventListener('mousemove',e=>{
+  if(!mouseDown_) return;
+  dragX=e.clientX-startX; dragY=e.clientY-startY;
+  const absX=Math.abs(dragX), absY=Math.abs(dragY);
+  if(absY>absX) applyDrag(0,dragY); else applyDrag(dragX,0);
+});
+document.addEventListener('mouseup',()=>{ if(!mouseDown_) return; mouseDown_=false; finishDrag(); dragX=0; dragY=0; });
+function applyDrag(dx,dy){
+  const card=document.getElementById('main-card');
+  if(Math.abs(dy)>Math.abs(dx) && dy<0){
+    card.style.transform=`translateY(${dy}px) scale(${1+dy*0.0005})`;
+    document.getElementById('ind-u').style.opacity=Math.min((-dy-30)/60,1)>0?Math.min((-dy-30)/60,1):'0';
+    document.getElementById('ind-r').style.opacity='0';
+    document.getElementById('ind-l').style.opacity='0';
+  } else {
+    card.style.transform=`translateX(${dx}px) rotate(${dx*0.04}deg)`;
+    document.getElementById('ind-r').style.opacity=dx>30?Math.min((dx-30)/60,1):'0';
+    document.getElementById('ind-l').style.opacity=dx<-30?Math.min((-dx-30)/60,1):'0';
+    document.getElementById('ind-u').style.opacity='0';
+  }
+  card.classList.add('dragging');
+}
+function finishDrag(){
+  const absX=Math.abs(dragX), absY=Math.abs(dragY);
+  if(absY>absX && dragY<-80){ deleteCurrentCard(); }
+  else if(absX>80){ judge(dragX>0); }
+  else { const c=document.getElementById('main-card'); c.style.transform=''; c.classList.remove('dragging'); ['ind-r','ind-l','ind-u'].forEach(id=>document.getElementById(id).style.opacity='0'); }
+}
+
+/* ===== Init ===== */
+async function init(){
+  await loadData();
+  renderChips(); buildDeck(); renderCard();
+}
+init();
+</script>
+</body>
+</html>
