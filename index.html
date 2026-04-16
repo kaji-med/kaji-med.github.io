@@ -121,13 +121,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 </div>
 
-<div class="genre-section">
-  <div class="genre-axis-row">
-    <div class="axis-tab active" onclick="setAxis('organ')">臓器別</div>
-    <div class="axis-tab" onclick="setAxis('disease')">疾患別</div>
-    <div class="axis-tab" onclick="setAxis('situation')">状況別</div>
-    <div class="axis-tab" onclick="setAxis('all')">すべて</div>
-  </div>
+<div class="genre-axis-row">
+  <div class="axis-tab active" onclick="setAxis('organ')">臓器別</div>
+  <div class="axis-tab" onclick="setAxis('disease')">疾患別</div>
+  <div class="axis-tab" onclick="setAxis('situation')">状況別</div>
+  <div class="axis-tab" onclick="setAxis('new')">新着</div>
+  <div class="axis-tab" onclick="setAxis('all')">すべて</div>
+</div>
   <div class="genre-chips" id="genre-chips"></div>
 </div>
 
@@ -505,6 +505,7 @@ const AXES = {
   organ:    {key:'organ',    colors:{上部消化管:{bg:'#E1F5EE',c:'#085041'},肝臓:{bg:'#FAECE7',c:'#712B13'},全身:{bg:'#EEEDFE',c:'#3C3489'},下部消化管:{bg:'#EAF3DE',c:'#27500A'},膵臓:{bg:'#FAEEDA',c:'#633806'},尿路:{bg:'#E6F1FB',c:'#0C447C'},呼吸器:{bg:'#FBEAF0',c:'#72243E'},消化管:{bg:'#EAF3DE',c:'#27500A'},中枢神経:{bg:'#FCEBEB',c:'#A32D2D'}}},
   disease:  {key:'disease',  colors:{GERD:{bg:'#E1F5EE',c:'#085041'},急性肝不全:{bg:'#FCEBEB',c:'#A32D2D'},'ショック・循環':{bg:'#EEEDFE',c:'#3C3489'},感染症:{bg:'#FAEEDA',c:'#633806'}}},
   situation:{key:'situation',colors:{救急初療:{bg:'#FCEBEB',c:'#A32D2D'},病棟急変:{bg:'#FAEEDA',c:'#633806'},'外来・病棟':{bg:'#EAF3DE',c:'#27500A'}}},
+  new:      {key:'added', colors:{'今日':{bg:'#FCEBEB',c:'#A32D2D'},'今週':{bg:'#FAEEDA',c:'#633806'},'今月':{bg:'#EAF3DE',c:'#27500A'}}},
   all:      {key:null,colors:{}},
 };
 
@@ -537,6 +538,11 @@ function setAxis(axis){
 function renderChips(){
   const wrap=document.getElementById('genre-chips');
   if(activeAxis==='all'){ wrap.innerHTML=''; return; }
+  if(activeAxis==='new'){
+    const vals=['all','今日','今週','今月'];
+    wrap.innerHTML=vals.map(v=>`<div class="chip${v===activeGenre?' active':''}" onclick="setGenre('${v}')">${v==='all'?'すべて':v}</div>`).join('');
+    return;
+  }
   const ak=AXES[activeAxis].key;
   const vals=['all',...new Set(activeCards().map(c=>c[ak]).filter(Boolean))];
   wrap.innerHTML=vals.map(v=>`<div class="chip${v===activeGenre?' active':''}" onclick="setGenre('${v}')">${v==='all'?'すべて':v}</div>`).join('');
@@ -551,7 +557,23 @@ function setGenre(genre){
 function getWeight(id){ const s=scores[id]; if(!s||(s.ok+s.ng)===0) return 3; const r=s.ok/(s.ok+s.ng); return r>=0.8?1:r>=0.5?2:4; }
 function buildDeck(onlyWrong=false){
   let pool=activeCards();
-  if(activeAxis!=='all'&&activeGenre!=='all'){ const ak=AXES[activeAxis].key; pool=pool.filter(c=>c[ak]===activeGenre); }
+  if(activeAxis==='new'&&activeGenre!=='all'){
+    const now=new Date();
+    pool=pool.filter(c=>{
+      if(!c.id) return false;
+      const m=c.id.match(/^[a-z]+(\d{2})(\d{2})/);
+      if(!m) return false;
+      const added=new Date(2026, parseInt(m[1])-1, parseInt(m[2]));
+      const diff=(now-added)/(1000*60*60*24);
+      if(activeGenre==='今日') return diff<1;
+      if(activeGenre==='今週') return diff<7;
+      if(activeGenre==='今月') return diff<30;
+      return true;
+    });
+  } else if(activeAxis!=='all'&&activeAxis!=='new'&&activeGenre!=='all'){
+    const ak=AXES[activeAxis].key;
+    pool=pool.filter(c=>c[ak]===activeGenre);
+  }
   if(onlyWrong) pool=pool.filter(c=>scores[c.id]&&scores[c.id].ng>0);
   let weighted=[]; pool.forEach(c=>{ const w=getWeight(c.id); for(let i=0;i<w;i++) weighted.push(c); });
   weighted.sort(()=>Math.random()-0.5);
@@ -561,8 +583,17 @@ function buildDeck(onlyWrong=false){
 
 /* ===== Render ===== */
 function getTagHTML(card){
+  const now=new Date();
+  const m=card.id&&card.id.match(/^[a-z]+(\d{2})(\d{2})/);
+  let newBadge='';
+  if(m){
+    const added=new Date(2026,parseInt(m[1])-1,parseInt(m[2]));
+    const diff=(now-added)/(1000*60*60*24);
+    if(diff<1) newBadge='<span class="tag" style="background:#FCEBEB;color:#A32D2D">NEW</span>';
+    else if(diff<7) newBadge='<span class="tag" style="background:#FAEEDA;color:#633806">今週</span>';
+  }
   const defs=[{key:'organ',colors:AXES.organ.colors},{key:'disease',colors:AXES.disease.colors},{key:'situation',colors:AXES.situation.colors}];
-  return defs.map(({key,colors})=>{ const val=card[key]; if(!val) return ''; const col=colors[val]||{bg:'#f0efea',c:'#5f5e5a'}; return `<span class="tag" style="background:${col.bg};color:${col.c}">${val}</span>`; }).join('');
+  return newBadge+defs.map(({key,colors})=>{ const val=card[key]; if(!val) return ''; const col=colors[val]||{bg:'#f0efea',c:'#5f5e5a'}; return `<span class="tag" style="background:${col.bg};color:${col.c}">${val}</span>`; }).join('');
 }
 function renderCard(){
   if(deck.length===0){ showEmpty(); return; }
